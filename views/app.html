@@ -1,0 +1,63 @@
+<div id="voip_container" class="clearfix container-menu">
+	<div class="left-menu developer">
+		<div id="main" class="category developer active">
+			<div class="title">
+				<i class="icon-telicon-home"></i>
+				<span class="title-text visible-desktop">{{ i18n.main.main_block }}</span>
+			</div>
+		</div>
+
+		<div class="category-group developer">
+			<input id="search" data-focus="false" class="category title input-search" maxlength="20" placeholder="{{ i18n.main.search_block }}" />
+			<i class="fa fa-search label-search"></i>
+
+			<div class="category developer">
+				<div class="show_all">{{ i18n.main.show_all }}</div>
+			</div>
+		</div>
+
+		<div class="btn toggle_animation"></div>
+
+		<div class="buffer">
+			<div class="box-up">
+				<div class="box__item up btn fa fa-chevron-up"></div>
+				<div class="box__item slade-down-all btn fa fa-th-large"></div>
+			</div>
+		</div>
+	</div>
+
+	<div class="right-content clearfix">
+		<div id="content" class="content">
+		{{#each this}}
+			{{#if title}}
+			<div class="block">
+				<div class="block__title" data-id="{{title}}">{{title}}</div>
+				{{#each this}}
+					{{#if url}}
+				<div class="item__content">
+					<div class="item__head">
+						<span class="item__title" title="{{url}}">{{url}}</span>
+						<span class="item__method item__method-{{verb}} btn" title="{{verb}}">{{verb}}</span>
+						<input type="hidden" class="input-hidden content-type" value="{{dataType}}" />
+						<input type="hidden" class="input-hidden schemas" value="{{schemas}}" />
+					</div>
+
+					<div class="item__body dnone">
+						<div class="item__request">
+							<div class="item__data">
+							</div>
+							<div class="box loading"></div>
+							<div class="item__submit btn btn-info"></div>
+						</div>
+
+						<div class="item__response"></div>
+					</div>
+				</div>
+					{{/if}}
+				{{/each}}
+			</div>
+			{{/if}}
+		{{/each}}
+		</div>
+	</div>
+</div>

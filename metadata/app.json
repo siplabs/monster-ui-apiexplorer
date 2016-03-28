@@ -1,0 +1,36 @@
+{
+	"name": "apiexplorer",
+	"i18n": {
+		"ru-RU": {
+			"label": "API Explorer",
+			"description": "Приложение, позволяющее упрощенно отправлять запросы к API Kazoo, получать ответ сервера в удобоваримом виде, сохранять историю работы."
+		},
+		"en-US": {
+			"label": "API Explorer",
+			"description": "API Explorer allows you to send requests a simplified to API Kazoo, get the server's response in the form of comfortable, save history work."
+		},
+		"en-EN": {
+			"label": "API Explorer",
+			"description": "API Explorer allows you to send requests a simplified to API Kazoo, get the server's response in the form of comfortable, save history work."
+		}
+	},
+	"tags": [
+		"developer"
+	],
+	"icon": "apiexplorer.png",
+	"api_url": "http://api.tvnow.io:8000/v2",
+	"author": "SIPLABS",
+	"version": "1.0",
+	"license": "-",
+	"price": 0,
+	"screenshots": [
+		"apiexplorer1.png",
+		"apiexplorer2.png",
+		"apiexplorer3.png"
+	],
+	"urls": {
+		"documentation": "{documentation_url}",
+		"howto": "{howto_video_url}"
+	},
+	"pvt_type": "app"
+}

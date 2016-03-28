@@ -1,0 +1,64 @@
+<div class="block__in">
+{{#each this}}
+	{{#cond 'this.type == "string"'}}
+		<div class="input-block">
+			<input class="item__input" type="text" name="{{@key}}" title="{{this.description}}" placeholder="{{#if this.name}}{{this.name}}{{else}}{{@key}}{{/if}}" required="{{this.required}}" />
+			<span title="Required" class="req">*</span>
+		</div>
+	{{/cond}}
+	{{#cond 'this.type == "boolean"'}}
+		<ul class="inputs-list">
+			<li>
+				<label>
+					<span class="input-block" title="{{this.description}}">
+		                <input class="item__input" type="checkbox" name="{{@key}}" required="{{this.required}}" />
+						<span title="Required" class="req">*</span>
+		                <span>
+		                	{{#if this.name}}
+								{{this.name}}
+							{{else}}
+								{{this.id}}
+							{{/if}}
+		                </span>
+	                </span>
+	            </label>
+	        </li>
+	    </ul>
+	{{/cond}}
+	{{#cond 'this.type == "array"'}}
+		{{#if this.enum}}
+			<ul class="inputs-list">
+				{{#each this.enum}}
+					<li>
+						<label>
+							<span class="input-block" title="{{this}}">
+				                <input class="item__input" type="checkbox" name="{{this}}[]" value="{{@index}}" required="{{this.required}}" />
+								<span title="Required" class="req">*</span>
+				                <span>{{this}}</span>
+			                </span>
+			            </label>
+		        	</li>
+				{{/each}}
+			</ul>
+		{{else}}
+			{{#if this.items}}
+				<div class="input-block">
+					<input class="item__input" type="text" name="{{@key}}[]" title="{{this.description}}" placeholder="{{#if this.name}}{{this.name}}{{else}}{{@key}}{{/if}}" required="{{this.required}}" />
+					<span title="Required" class="req">*</span>
+				</div>
+			{{/if}}
+		{{/if}}
+	{{/cond}}
+	{{#cond 'this.type == "integer"'}}
+		<div class="input-block">
+			<input class="item__input" type="number" name="{{@key}}" title="{{this.description}}" placeholder="{{#if this.name}}{{this.name}}{{else}}{{@key}}{{/if}}" required="{{this.required}}" />
+			<span title="Required" class="req">*</span>
+		</div>
+	{{/cond}}
+	<!--{{#cond '!this.$ref && this.type == "object" && this.properties'}}
+		<div class="object" data-key="{{@key}}">
+			<div class="object__title">{{@key}}:</div>
+		</div>
+	{{/cond}}-->
+{{/each}}
+</div>

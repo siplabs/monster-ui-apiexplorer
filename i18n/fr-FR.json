@@ -1,0 +1,11 @@
+{
+	"main": {
+		"main_block": "API",
+		"search_block": "Chercher",
+		"request": "Essayer",
+		"invalid_form": "Forme est invalide!",
+		"show_all": "Montre Tout",
+		"animation_on": "Animation Sur",
+		"animation_off": "Animation Off"
+	}
+}

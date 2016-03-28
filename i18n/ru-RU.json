@@ -1,0 +1,11 @@
+{
+	"main": {
+		"main_block": "API",
+		"search_block": "Поиск",
+		"request": "Отправить",
+		"invalid_form": "Не все поля заполнены!",
+		"show_all": "Показать все",
+		"animation_on": "Включить Анимацию",
+		"animation_off": "Выключить Анимацию"
+	}
+}
