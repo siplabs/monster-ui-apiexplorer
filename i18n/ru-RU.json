@@ -5,7 +5,9 @@
 		"request": "Отправить",
 		"invalid_form": "Не все поля заполнены!",
 		"show_all": "Показать все",
-		"animation_on": "Включить Анимацию",
-		"animation_off": "Выключить Анимацию"
+		"animation": "Анимация",
+		"title_config": "Опции",
+		"save_config": "Сохранить",
+		"query_param": "Query параметр"
 	}
 }

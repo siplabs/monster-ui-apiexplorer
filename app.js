@@ -1,14 +1,12 @@
 define(function(require){
-	var s = document.createElement("script");
-	s.src = "apps/apiexplorer/lib/highlight.pack.js";
-	s.async = false;
-	document.head.insertBefore(s, document.head.firstChild);
-
 	var $ = require('jquery'),
+		jQui = require('jqueryui'),
+		highlighter = require('hljs'),
+		clipboard = require('clipboard'),
 		monster = require('monster'),
 		methodsGenerator = {},
-		animation = true,
-		options_elems = [];
+		domProps = [];
+		animation = true;
 
 	var app = {
 		name: 'apiexplorer',
@@ -56,35 +54,38 @@ define(function(require){
 			leftTitles = self.getLeftTitles();
 
 			self.getNToMProperty(iter * dataCount, (iter + 1) * dataCount, function (data) {
-				template = $(monster.template(self, 'app', data));
+				self.dataSort(data, function(n_data) {
+					template = $(monster.template(self, 'app', n_data));
+					template.find(".left-menu .category-group .category").append(leftTitles);
 
-				if (animation) {
-					template.find(".left-menu .toggle_animation").text(self.i18n.active().main.animation_off);
-				} else {
-					template.find(".left-menu .toggle_animation").text(self.i18n.active().main.animation_on);
-				}
+					self.bindEvents(template, function () {
+						parent.empty().append(template);
 
-				template.find(".left-menu .category-group .category").append(leftTitles);
-				self.bindEvents(template);
-				parent.empty().append(template);
+						intervalID = setInterval(function () {
+							iter++;
 
-				intervalID = setInterval(function () {
-					iter++;
+							self.getNToMProperty(iter * dataCount, (iter + 1) * dataCount, function (data) {
+								self.dataSort(data, function(n_data) {
+									template = $(monster.template(self, 'app', n_data));
+									template.find('.item__submit').text(self.i18n.active().main.request);
+									$('#content').append(template.find('.block'));
+								});
+							});
 
-					self.getNToMProperty(iter * dataCount, (iter + 1) * dataCount, function (data) {
-						template = $(monster.template(self, 'app', data));
-						template.find('.item__submit').text(self.i18n.active().main.request);
-						$('#content').append(template.find('.block'));
+							if (iter * dataCount > Object.keys(methodsGenerator).length) {
+								clearInterval(intervalID);
+							}
+						}, 100);
+
+						setTimeout(function () {
+							$(".box-up").css("max-width", $(".buffer").width());
+						}, 3000);
 					});
-
-					if (iter * dataCount > Object.keys(methodsGenerator).length) {
-						clearInterval(intervalID);
-					}
-				}, 100);
+				});
 			});
 		},
 
-		bindEvents: function(parent) {
+		bindEvents: function(parent, callback) {
 			var self = this,
 			item_block,
 			item_block_title,
@@ -98,6 +99,7 @@ define(function(require){
 			item_schemas,
 			arr_params = [],
 			url_request = "",
+			placeholder = "",
 			device_list,
 			device_options = "",
 			device_ids = [],
@@ -129,8 +131,6 @@ define(function(require){
 			container.find('.item__submit').text(self.i18n.active().main.request);
 			container.find('.item__title:empty').closest('.block').remove();
 
-			self.addDataLists(container);
-
 			container.find('.content').on("click", '.item__head', function() {
 				item_block = $(this).parent();
 				item_body = $(item_block).find('.item__body');
@@ -154,7 +154,11 @@ define(function(require){
 							return elem.replace(/\{|\}/g, "");
 						});
 						$.each(arr_params, function (i, elem) {
-							item_params += '<input type="text" class="item__input ' + elem + '" placeholder="' + elem.replace(/([A-Z0-9])/g, " $1").toLowerCase() + '" />';
+							placeholder = elem.replace(/([A-Z0-9])/g, " $1").toLowerCase();
+							item_params += '<div class="box_query">';
+							item_params += '<div class="ph_query" title=' + elem + '>' + self.i18n.active().main.query_param + ': <span> ' + placeholder + '</span></div>';
+							item_params += '<input type="text" class="item__input ' + elem + '" placeholder="' + placeholder + '" />';
+							item_params += '</div>';
 						});
 
 						$(item_data).html(item_params);
@@ -172,17 +176,7 @@ define(function(require){
 							$(item_data).find(".domain").val(monster.apps.auth.apiUrl);
 						}
 
-						$.each(options_elems, function (i, elem) {
-							if ($.inArray(elem + "Id", arr_params) !== -1) {
-								$(item_data).find("." + elem + "Id").attr("list", elem + "Id");
-
-								if ($("datalist#" + elem + "Id option").size() > 12) {
-									$(item_data).find("." + elem + "Id").on("dblclick", function () {
-										$('body').animate({scrollTop: $(this).offset().top - 5}, 600);
-									});
-								}
-							}
-						});
+						self.addDataLists(container);
 					}
 
 					if (method == "post" || method == "patch" || method == "put") {
@@ -200,15 +194,23 @@ define(function(require){
 									$(item_data).append("<br/><hr/><div class='name_obj'>" + self.defElem(data.data.name) + "</div>");
 									$(item_data).append(template_schema);
 
-									// $.each(data.data.properties, function (i, elem) {
-									// 	if (defElem(elem.type) == "object" && self.defElem(elem.properties) != false &&
-									// 	defElem(elem.$ref) == false && self.defElem(elem.additionalProperties) == false) {
-									// 		inner_template = $(monster.template(self, 'schema', elem.properties));
-									// 		$(item_data).find('.object[data-key="' + i + '"]').append(inner_template);
-									// 	}
-									// });
+									domProps = [];
 
-									$(item_body).css("max-height", $(item_response).height() + $(item_request).height() + 120 + "px");
+									self.propsToDOM(data.data.properties, 0, "", function() {
+										$(item_body).css("max-height", $(item_response).height() + $(item_request).height() + 120 + "px");
+
+										$(item_data).on("click", ".add-input", function() {
+											var id = Math.random().toString(36).substring(14);
+											$(item_data).find(".block-costum")
+											.append("<div class='input-block input-block-prop'><input id='" + id + "' data-level='0' type='text' placeholder='Costum key' class='item__input item__input-prop' /></div>");
+
+											self.propComplete($(item_data).find(".input-block-prop:last-child()"), "#" + id, "", 0, function() {
+												$(item_body).css("max-height", $(item_response).height() + $(item_request).height() + 120 + "px");
+											});
+
+											$(item_body).css("max-height", $(item_response).height() + $(item_request).height() + 120 + "px");
+										});
+									});
 								},
 								error: function(data) {
 									console.log("Error: " + JSON.stringify(data, null, '\t'));
@@ -226,7 +228,9 @@ define(function(require){
 			});
 
 			self.bindSubmit(container);
-			self.bindAnimation();
+			self.bindConfig();
+
+			callback && callback();
 		},
 
 		leftBindEvents: function(parent) {
@@ -334,20 +338,122 @@ define(function(require){
 			});
 		},
 
-		bindAnimation: function() {
-			$("body").on("click", ".toggle_animation", function () {
-				if (animation) {
-					localStorage.animation = "false";
-				} else {
-					localStorage.animation = "true";
-				}
+		bindConfig: function() {
+			var self = this, config_template = "<div class='config__box'>";
+			var checked = (localStorage.animation == "true") ? "checked" : "";
+			config_template += "<label class='label_animation' for='animation_config'>" + self.i18n.active().main.animation + ": ";
+			config_template += "<input type='checkbox' id='animation_config' class='animation_config' " + checked + "/></label>";
+			config_template += "<div class='btn btn-success config_save'>" + self.i18n.active().main.save_config + "</div>";
+			config_template += "</div>";
+
+			$("body").on("click", ".config", function () {
+				monster.ui.dialog($(config_template), {
+					title: self.i18n.active().main.title_config,
+					width: '400px'
+				});
+			});
+
+			$("body").on("click", ".config_save", function () {
+				localStorage.animation = "" + $(".animation_config").prop('checked');
 
 				window.location.reload();
 			});
 		},
 
+		propComplete: function(parent, selector, parentProp, level, callback) {
+			var self = this, props = [];
+
+			$.each(domProps, function(i, item) {
+				if (item.level == level && (item.parent == parentProp || parentProp == "")) {
+					props.push(item);
+				}
+			});
+
+			$(parent).find(selector).autocomplete({
+				source: props,
+				minLength: 0,
+				delay: 0,
+				create: function() {
+					$(this).on("focus", function() {
+						$(this).autocomplete("search" , "");
+					});
+				},
+				select: function(event, ui) {
+					var thisElem = this,
+					id = Math.random().toString(36).substring(14);
+
+					$(thisElem).attr("data-additional", ui.item.additional)
+						.attr("data-parent", ui.item.parent)
+						.attr("title", ui.item.title);
+
+					$(parent).find(".item__input").filter(function(){return $(this).attr("data-level") > $(thisElem).attr("data-level")}).remove();
+					level = parseInt($(thisElem).attr("data-level"), 10) + 1;
+
+					if (ui.item.type == "select") {
+						$(parent).append("<input id='" + id + "' data-level='" + level + "' type='text' placeholder='Costum key' class='item__input item__input-prop' />");
+						$(parent).find("#" + id).attr("style", "margin-left: " + level + "rem !important");
+						self.propComplete(parent, "#" + id, ui.item.value, level, function() {
+							callback && callback();
+						});
+					} else {
+						$(parent).append("<input id='" + id + "' data-level='" + level + "' type='" + ui.item.type + "' placeholder='Costum value' class='item__input item__input-value' />");
+						$(parent).find("#" + id).attr("style", "margin-left: " + level + "rem !important");
+						callback && callback();
+					}
+				}
+			});
+		},
+
+		propsToDOM: function(props, level, parent, callback) {
+			var self = this;
+
+			$.each(props, function(i, item) {
+				if (typeof item.type !== "undefined" && item.type == "object" && typeof item.properties !== "undefined") {
+					domProps.push({
+						value: i,
+						label: item.name || i.replace("_", " "),
+						title: item.description || i.replace("_", " "),
+						level: level,
+						parent: parent,
+						type: "select",
+						additional: false
+					});
+					self.propsToDOM(item.properties, level + 1, i);
+				} else {
+					if (typeof item.type !== "undefined" && item.type == "object" &&
+					typeof item.additionalProperties !== "undefined" &&
+					typeof item.additionalProperties.properties !== "undefined") {
+						domProps.push({
+							value: i,
+							label: item.name || i.replace("_", " "),
+							title: item.description || i.replace("_", " "),
+							level: level,
+							parent: parent,
+							type: "select",
+							additional: true
+						});
+						self.propsToDOM(item.additionalProperties.properties, level + 1, i);
+					} else {
+						if (item.type == "number" || item.type == "string" || item.type == "integer" ||  item.type == "boolean") {
+							domProps.push({
+								value: i,
+								label: item.name || i.replace("_", " "),
+								title: item.description || i.replace("_", " "),
+								level: level,
+								parent: parent,
+								type: (item.type == "boolean") ? "checkbox" : "text",
+								additional: false
+							});
+						}
+					}
+				}
+			});
+
+			callback && callback();
+		},
+
 		getValidData: function(item_data, item_title, callback) {
-			var valid = true, params_query = [], params_data = {}, request_data = {};
+			var valid = true, params_query = [], params_data = {}, request_data = {}, costumValue, costumParams = {};
 
 			$(item_data).find(".item__input[required='true']").each(function (i, elem) {
 				if ($(elem).val().length === 0) {
@@ -365,9 +471,23 @@ define(function(require){
 				}
 			});
 
-			$(item_data).find(".input-block .item__input").each(function (i, elem) {
+			$(item_data).find(".input-block:not(.input-block-prop) .item__input").each(function (i, elem) {
 				if ($(elem).val().length !== 0) {
 					params_data[$(elem).attr("name")] = ($(elem).attr("type") === "checkbox") ? $(elem).is(":checked") : $(elem).val();
+				}
+			});
+
+			$(item_data).find(".input-block-prop").each(function (i, elem) {
+				costumValue = $(elem).find(".item__input-value");
+				if($(costumValue).val().length !== 0 || $(costumValue).attr("type") === "checkbox") {
+					costumParams[$(elem).find(".item__input-prop").last().val()] = ($(costumValue).attr("type") === "checkbox") ? $(costumValue).is(":checked") : $(costumValue).val();
+
+					$($(elem).find(".item__input-prop").not(":last()").not(":first()").get().reverse()).each(function (j, item) {
+						costumParams[$(item).val()] = costumParams;
+					});
+
+					params_data[$(elem).find(".item__input-prop").first().val()] = costumParams;
+					costumParams = {};
 				}
 			});
 
@@ -395,7 +515,7 @@ define(function(require){
 					"X-Auth-Token": monster.apps.auth.authToken
 				},
 				success: function(data) {
-					item_response.html("<br/><div class='pre_block'><pre class='pre'>URL: " + url + "</pre><div class='copy-btn fa fa-copy'></div></div><br/><div class='pre_block'><pre class='pre'>" + JSON.stringify(data, null, '   ') + "</pre><div class='copy-btn fa fa-copy'></div></div>");
+					item_response.html("<br/><div class='pre_block'><pre class='pre'>URL: <span class='copy-text'>" + url + "</span></pre><div class='copy-btn fa fa-copy'></div></div><br/><div class='pre_block'><pre class='pre'><span class='copy-text'>" + JSON.stringify(data, null, '   ') + "</span></pre><div class='copy-btn fa fa-copy'></div></div>");
 					item_body.css("max-height", item_response.height() + item_request.height() + 50 + "px");
 					item_response.find(".pre").each(function (i, block) {
 						hljs.highlightBlock(block);
@@ -403,7 +523,7 @@ define(function(require){
 					item_body.find('.box.loading').fadeOut(600);
 				},
 				error: function(data) {
-					item_response.html("<br/><div class='pre_block'><pre class='pre'>URL: " + url + "</pre><div class='copy-btn fa fa-copy'></div></div><br/><div class='pre_block'><pre class='pre'>" + JSON.stringify(data, null, '   ') + "</pre><div class='copy-btn fa fa-copy'></div></div>");
+					item_response.html("<br/><div class='pre_block'><pre class='pre'>URL: <span class='copy-text'>" + url + "</span></pre><div class='copy-btn fa fa-copy'></div></div><br/><div class='pre_block'><pre class='pre'><span class='copy-text'>" + JSON.stringify(data, null, '   ') + "</span></pre><div class='copy-btn fa fa-copy'></div></div>");
 					item_body.css("max-height", item_response.height() + item_request.height() + 50 + "px");
 					item_response.find(".pre").each(function (i, block) {
 						hljs.highlightBlock(block);
@@ -427,6 +547,51 @@ define(function(require){
 			});
 
 			callback && callback(newObject);
+		},
+
+		dataSort: function(data, callback) {
+			var n_data = {};
+
+			$.each(data, function (i, elem) {
+				var new_data = [];
+
+				n_data[i] = {};
+
+				$.each(elem, function (j, subelem) {
+					new_data.push({key: j, value: subelem});
+				});
+
+				new_data.sort(function(a, b) {
+					if (typeof a.value !== "string" && typeof b.value !== "string") {
+						return b.value.verb.length - a.value.verb.length;
+					} else {
+						if (typeof a.value !== "string") return 1;
+						if (typeof b.value !== "string") return -1;
+					}
+
+					return 0;
+				});
+
+				new_data.sort(function(a, b) {
+					if (typeof a.value !== "string" && typeof b.value !== "string") {
+						return a.value.url.length - b.value.url.length ||
+							(a.value.url > b.value.url) - (a.value.url < b.value.url) ||
+							a.value.verb.length - b.value.verb.length ||
+							(a.value.verb > b.value.verb) - (a.value.verb < b.value.verb);
+					} else {
+						if (typeof a.value !== "string") return 1;
+						if (typeof b.value !== "string") return -1;
+					}
+
+					return 0;
+				});
+
+				for(var k = 0, len = new_data.length; k < len; k++) {
+					n_data[i][new_data[k].key] = new_data[k].value;
+				}
+			});
+
+			callback && callback(n_data);
 		},
 
 		filterMethods: function() {
@@ -482,7 +647,7 @@ define(function(require){
 		},
 
 		addDataList: function(container, method, prop, resource, name_res) {
-			var self = this, resource_ids, resource_options = "", name = "", value;
+			var self = this, resource_ids, resource_options = [], name = "", value;
 
 			self.callApi({
 				resource: resource + '.' + method,
@@ -496,10 +661,12 @@ define(function(require){
 						$.each(resource_ids, function (i, elem) {
 							value = (prop !== "") ? elem[prop] : elem;
 							name = self.getPropName(elem, prop);
-							resource_options +=  '<option value="' + value + '">' + name + '</option>';
+							resource_options.push({label: name, value: value});
 						});
-						container.append('<datalist id="' + name_res + 'Id">' + resource_options + '</datalist>');
-						options_elems.push(name_res);
+						$("." + name_res + "Id").autocomplete({source: resource_options, minLength: 0, delay: 0});
+						$("." + name_res + "Id").on("focus", function() {
+							$(this).autocomplete("search" , "");
+						});
 					}
 				},
 				error: function(data) {
@@ -538,7 +705,7 @@ define(function(require){
 					methodsGenerator = $.parseJSON(data);
 				},
 				error: function(data) {
-					methodsGenerator = $.parseJSON(data);
+					methodsGenerator = $.parseJSON(data.responseText);
 				}
 			});
 		},
@@ -578,26 +745,24 @@ define(function(require){
 				return result ? options.fn(this) : options.inverse(this);
 			});
 
-			$.getScript("apps/" + this.name + "/lib/clipboard.min.js", function (data, textStatus, jqxhr) {
-				var clip = new Clipboard('.copy-btn', {
-					text: function(trigger) {
-						return $(trigger).parent().find(".pre").text();
-					}
-				});
+			var clip = new Clipboard('.copy-btn', {
+				text: function(trigger) {
+					return $(trigger).parent().find(".pre .copy-text").text();
+				}
+			});
 
-				clip.on('success', function (e) {
-					e.clearSelection();
+			clip.on('success', function (e) {
+				e.clearSelection();
+				$(e.trigger).css("color", $(e.trigger).css("background-color"));
+				setTimeout(function () {
+					$(e.trigger).removeClass("fa-copy").addClass("fa-check").css("color", "#2f6");
+				}, 600);
+				setTimeout(function () {
 					$(e.trigger).css("color", $(e.trigger).css("background-color"));
 					setTimeout(function () {
-						$(e.trigger).removeClass("fa-copy").addClass("fa-check").css("color", "#2f6");
+						$(e.trigger).removeClass("fa-check").addClass("fa-copy").css("color", "#fff");
 					}, 600);
-					setTimeout(function () {
-						$(e.trigger).css("color", $(e.trigger).css("background-color"));
-						setTimeout(function () {
-							$(e.trigger).removeClass("fa-check").addClass("fa-copy").css("color", "#fff");
-						}, 600);
-					}, 5000);
-				});
+				}, 5000);
 			});
 		},
 
@@ -635,7 +800,7 @@ define(function(require){
 
 			return bName;
 		}
-	};
+	}
 
 	return app;
 });

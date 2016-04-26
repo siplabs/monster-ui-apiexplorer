@@ -18,8 +18,8 @@
 		"developer"
 	],
 	"icon": "apiexplorer.png",
-	"api_url": "http://api.tvnow.io:8000/v2",
-	"author": "SIPLABS",
+	"api_url": "",
+	"author": "SIPLABS LLC",
 	"version": "1.0",
 	"license": "-",
 	"price": 0,
