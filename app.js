@@ -7,6 +7,9 @@ define(function(require){
 		methodsGenerator = {},
 		domProps = [];
 		animation = true;
+	
+	var Handlebars = require('handlebars');
+    var Clipboard = require('clipboard');
 
 	var app = {
 		name: 'apiexplorer',
