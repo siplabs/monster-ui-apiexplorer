@@ -51,7 +51,7 @@ define(function(require){
 			var self = this,
 			template, intervalID,
 			iter = 0, dataCount = 4, leftTitles = "",
-			parent = container || $('#monster-content');
+			parent = container || $('#monster_content');
 
 			self.filterMethods();
 			leftTitles = self.getLeftTitles();
@@ -515,7 +515,7 @@ define(function(require){
 				headers: {
 					"Accept": content_type,
 					"Content-Type": content_type,
-					"X-Auth-Token": monster.apps.auth.authToken
+					"X-Auth-Token": monster.apps.auth.getAuthToken()
 				},
 				success: function(data) {
 					item_response.html("<br/><div class='pre_block'><pre class='pre'>URL: <span class='copy-text'>" + url + "</span></pre><div class='copy-btn fa fa-copy'></div></div><br/><div class='pre_block'><pre class='pre'><span class='copy-text'>" + JSON.stringify(data, null, '   ') + "</span></pre><div class='copy-btn fa fa-copy'></div></div>");
