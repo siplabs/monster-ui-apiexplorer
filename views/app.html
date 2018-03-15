@@ -45,11 +45,14 @@
 						<div class="item__request">
 							<div class="item__data">
 							</div>
-							<div class="box loading"></div>
-							<div class="item__submit btn btn-info"></div>
+							<div class="js-request-buttons-box buttons-wrapper">
+								<a class="js-send-request item__submit btn btn-info" href="">
+									<i class="fa fa-paper-plane"></i> {{ @root.i18n.main.request }}
+								</a>
+							</div>
 						</div>
 
-						<div class="item__response"></div>
+						<div class="js-item-response item__response"></div>
 					</div>
 				</div>
 					{{/if}}

@@ -2,12 +2,16 @@
 	"main": {
 		"main_block": "API",
 		"search_block": "Поиск",
-		"request": "Отправить",
+		"request": "Отправить запрос",
 		"invalid_form": "Не все поля заполнены!",
 		"show_all": "Показать все",
 		"animation": "Анимация",
 		"title_config": "Опции",
 		"save_config": "Сохранить",
 		"query_param": "Query параметр"
+	},
+	"apiexplorer": {
+		"nextRequestBtnText": "Отправить следующий",
+		"sendFirstRequestBtnText": "Отправить первый"
 	}
 }

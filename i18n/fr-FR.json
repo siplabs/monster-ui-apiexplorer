@@ -9,5 +9,9 @@
 		"title_config": "Options",
 		"save_config": "Enregistrer",
 		"query_param": "Paramètre query"
+	},
+	"apiexplorer": {
+		"nextRequestBtnText": "Envoyer suivant",
+		"sendFirstRequestBtnText": "Envoyer la première demande"
 	}
 }

@@ -70,7 +70,6 @@ define(function(require){
 							self.getNToMProperty(iter * dataCount, (iter + 1) * dataCount, function (data) {
 								self.dataSort(data, function(n_data) {
 									template = $(monster.template(self, 'app', n_data));
-									template.find('.item__submit').text(self.i18n.active().main.request);
 									$('#content').append(template.find('.block'));
 								});
 							});
@@ -131,7 +130,6 @@ define(function(require){
 				}
 			});
 
-			container.find('.item__submit').text(self.i18n.active().main.request);
 			container.find('.item__title:empty').closest('.block').remove();
 
 			container.find('.content').on("click", '.item__head', function() {
@@ -320,7 +318,8 @@ define(function(require){
 		bindSubmit: function(container) {
 			var self = this;
 
-			container.find(".content").on("click", ".item__submit", function() {
+			container.find(".content").on("click", ".item__submit", function(e) {
+				e.preventDefault();
 				var item_block = $(this).closest(".item__content"),
 				item_body = $(item_block).find('.item__body'),
 				item_data = $(item_block).find('.item__data'),
@@ -332,7 +331,8 @@ define(function(require){
 
 				self.getValidData(item_data, item_title, function (valid, url, request_data) {
 					if (valid) {
-						$(item_block).find('.box.loading').fadeIn();
+						$(item_block).find('.btn-loading').removeClass('btn-loading');
+						$(item_block).find('.js-send-request').addClass('btn-loading');
 						self.getResponse(method, url, content_type, request_data, item_body);
 					} else {
 						monster.ui.alert('info', self.i18n.active().main.invalid_form);
@@ -505,11 +505,23 @@ define(function(require){
 			callback && callback(valid, url_request, request_data);
 		},
 
-		getResponse: function(method, url, content_type, request_data, item_body) {
-			var item_response = item_body.find('.item__response'), item_request = item_body.find('.item__request');
+		getResponse: function(method, url, content_type, request_data, item_body, nextStartKey) {
+			var self = this;
+			var item_response = item_body.find('.item__response'),
+				item_request = item_body.find('.item__request');
+
+			var modifiedUrl = url;
+
+			if(typeof(nextStartKey) !== 'undefined') {
+				var paramPrefix = (modifiedUrl.indexOf('?') === -1 ? '?' : '&');
+				modifiedUrl += paramPrefix + 'start_key=' + encodeURIComponent(nextStartKey);
+			}
+
+			// hard limit count of objects in each response
+			// modifiedUrl += (modifiedUrl.indexOf('?') === -1) ? '?page_size=3': '&page_size=3';
 
 			$.ajax({
-				url: url,
+				url: modifiedUrl,
 				type: method,
 				data: JSON.stringify(request_data),
 				headers: {
@@ -518,20 +530,36 @@ define(function(require){
 					"X-Auth-Token": monster.apps.auth.getAuthToken()
 				},
 				success: function(data) {
+					var $buttonsBox = item_body.find('.js-request-buttons-box');
+					$buttonsBox.find('.js-next-request').remove();
+					var $sendBtn = $buttonsBox.find('.js-send-request');
+					$sendBtn.html('<i class="fa fa-repeat"></i> ' + self.i18n.active().apiexplorer.sendFirstRequestBtnText);
+
+					if(data.next_start_key) {
+						var $nextBtn = $('<a class="js-next-request btn"><i class="fa fa-paper-plane"></i> ' + self.i18n.active().apiexplorer.nextRequestBtnText + '</a>')
+							.appendTo($buttonsBox)
+							.on('click', function(e) {
+								e.preventDefault();
+								$(this).addClass('btn-loading');
+								self.getResponse(method, url, content_type, request_data, item_body, data.next_start_key);
+							});
+					}
+
 					item_response.html("<br/><div class='pre_block'><pre class='pre'>URL: <span class='copy-text'>" + url + "</span></pre><div class='copy-btn fa fa-copy'></div></div><br/><div class='pre_block'><pre class='pre'><span class='copy-text'>" + JSON.stringify(data, null, '   ') + "</span></pre><div class='copy-btn fa fa-copy'></div></div>");
 					item_body.css("max-height", item_response.height() + item_request.height() + 50 + "px");
 					item_response.find(".pre").each(function (i, block) {
 						hljs.highlightBlock(block);
 					});
-					item_body.find('.box.loading').fadeOut(600);
+					item_body.find('.btn-loading').removeClass('btn-loading');
 				},
 				error: function(data) {
+					item_body.find('.js-send-request').html('<i class="fa fa-repeat"></i> ' + self.i18n.active().apiexplorer.sendFirstRequestBtnText);
 					item_response.html("<br/><div class='pre_block'><pre class='pre'>URL: <span class='copy-text'>" + url + "</span></pre><div class='copy-btn fa fa-copy'></div></div><br/><div class='pre_block'><pre class='pre'><span class='copy-text'>" + JSON.stringify(data, null, '   ') + "</span></pre><div class='copy-btn fa fa-copy'></div></div>");
 					item_body.css("max-height", item_response.height() + item_request.height() + 50 + "px");
 					item_response.find(".pre").each(function (i, block) {
 						hljs.highlightBlock(block);
 					});
-					item_body.find('.box.loading').fadeOut(600);
+					item_body.find('.btn-loading').removeClass('btn-loading');
 				}
 			});
 		},
